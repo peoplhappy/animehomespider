@@ -18,7 +18,7 @@ class AnimehomespiderItem(scrapy.Item):
     animeshowtime = scrapy.Field() #动画的放映时间 首播时间 : 2018-04-07，需要正则提取 body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-child(2) > ul > li:nth-child(4)
     animetype = scrapy.Field()  #动画的类型 悬疑等 取下面所有a的innertext body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-child(2) > ul > li:nth-child(6)
     animerated = scrapy.Field() #动画的评分  #anim_score_info > span.points_text 评分
-    animetotalvideotime = scrapy.Field() #动画的集数  body > div.page_bg > div.wrap > div.middleright > div > div.anim_online > div.h2_title2 > span:nth-child(3) > span > a
+    animetotalvideotime = scrapy.Field() #动画的集数  div.odd_anim_title > div.odd_anim_title_tnew > div > span.font12yellow
     animeplaytype = scrapy.Field() #放映种类  TV  OVA 剧场等信息为 动画种类:TV，正则提取 body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-child(2) > ul > li:nth-child(1)
     animeoriginmaker = scrapy.Field() #原作 原作 : 堀越耕平 正则提取（可能多个）body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-child(2) > ul > li:nth-child(7)
     animedirector = scrapy.Field() #监督 监督 : 长崎健司 正则提取（可能多个）   body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-child(2) > ul > li:nth-child(8)

@@ -8,4 +8,5 @@
 
 class AnimehomespiderPipeline(object):
     def process_item(self, item, spider):
+        #写入csv中
         return item

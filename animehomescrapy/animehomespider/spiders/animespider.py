@@ -5,6 +5,7 @@ from scrapy_splash import SplashRequest
 import bs4
 import re
 from selenium import webdriver
+import json
 class animespider(CrawlSpider):
     name="animespider"
     main_url="http://donghua.dmzj.com"
@@ -23,40 +24,44 @@ class animespider(CrawlSpider):
     def parser(self,response):
         #获取页数
         soup=bs4.BeautifulSoup(response.text,"lxml")
-        pagesrc=soup.select_one("#list_content_div > div > span.font14black")
+        pagesrc=soup.select_one("#list_content_div  div  span.font14black")
         pagepattern = r"共(\d+)页"
         if pagesrc:
             page = re.match(pagepattern, pagesrc.text).group(1)
         else:
             soup=bs4.BeautifulSoup(self.getpagesource(response.url),"lxml")
-            pagesrc = soup.select_one("#list_content_div > div > span.font14black")
+            pagesrc = soup.select_one("#list_content_div  div  span.font14black")
             page = re.match(pagepattern, pagesrc.text).group(1)
         print("start to collect anime info")
-        for i in range(int(page)):
-
-        pass
+        pattern=r"\d+\.html"
+        result=re.search(pattern,response.url);
+        for i in range(1,int(page)+1):
+            url = response.url.replace(result.group(0),"") + str(i)+".html"
+            yield SplashRequest(url=url, callback=self.pagepaser,
+                                args={'wait': '10', "timeout": "3600", "render_all": "1"}, dont_filter=True)
 
 
     def pagepaser(self,response):
         soup = bs4.BeautifulSoup(response.text, "lxml")
-        items = soup.select("#list_content_div > ul > li:nth-of-type(1) > div.anim_border")
+        items = soup.select("div.anim_border")
         for item in items:
             url = self.main_url + item.select_one("a")["href"]
             yield SplashRequest(url=url, callback=self.itemparser,args={'wait': '10',"timeout":"3600","render_all":"1"},dont_filter=True)
     def itemparser(self,response):
         soup = bs4.BeautifulSoup(response.text, "lxml")
         item=Item.AnimehomespiderItem()
-        item["animename"]=soup.select_one("body > div.page_bg > div.wrap > div.middleright > div > div.odd_anim_title > div.odd_anim_title_tnew > div > a > span > h1").text
+        item["animename"]=soup.select_one("div.odd_anim_title_tnew  div  a  span  h1").text
         item["animeurl"]=response.url
-        item["animeplaytimes"]=soup.select_one("body > div.page_bg > div.wrap > div.middleright > div > div.anim_online > div.h2_title2 > span:nth-of-type(4) > span").text
-        item["animemaker"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(9)").text
-        item["animeshowtime"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(4)").text
-        item["animetype"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(6)").text
-        item["animerated"]=soup.select_one("#anim_score_info > span.points_text").text
-        item["animetotalvideotime"]=soup.select_one("body > div.page_bg > div.wrap > div.middleright > div > div.anim_online > div.h2_title2 > span:nth-of-type(3) > span > a").text
-        item["animeplaytype"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(1)").text
-        item["animeoriginmaker"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(7)").text
-        item["animedirector"]=soup.select_one("body > div.page_bg > div.wrap > div.left > div > div.anim_intro > div.week_mend_new > div > div.anim_attributenew > div:nth-of-type(2) > ul > li:nth-of-type(8)").text
+        item["animeplaytimes"]=soup.select_one("div.anim_online  div.h2_title2  span:nth-of-type(4)").text
+        item["animemaker"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(9)").text
+        item["animeshowtime"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(4)").text
+        item["animetype"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(6) a").text
+        item["animerated"]=soup.select_one("#anim_score_info  span.points_text").text
+        item["animetotalvideotime"]=soup.select_one("div.odd_anim_title > div.odd_anim_title_tnew > div > span.font12yellow").text
+        item["animeplaytype"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(1)").text
+        item["animeoriginmaker"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(7)").text
+        item["animedirector"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(8)").text
+        print(json.dumps(dict(item),ensure_ascii=False))
         yield item
         pass
     def getpagesource(self,url):
