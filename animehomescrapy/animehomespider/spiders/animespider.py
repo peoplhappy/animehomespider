@@ -6,6 +6,7 @@ import bs4
 import re
 from selenium import webdriver
 import json
+import csv
 class animespider(CrawlSpider):
     name="animespider"
     main_url="http://donghua.dmzj.com"
@@ -14,6 +15,7 @@ class animespider(CrawlSpider):
             "Accept-Encoding":"gzip, deflate",
             "Accept-Language":"zh-CN,zh;q=0.9",
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36",}
+
 
 
     def start_requests(self):
@@ -52,15 +54,50 @@ class animespider(CrawlSpider):
         item=Item.AnimehomespiderItem()
         item["animename"]=soup.select_one("div.odd_anim_title_tnew  div  a  span  h1").text
         item["animeurl"]=response.url
-        item["animeplaytimes"]=soup.select_one("div.anim_online  div.h2_title2  span:nth-of-type(4)").text
-        item["animemaker"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(9)").text
-        item["animeshowtime"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(4)").text
+        #提取播放次数
+        playpattern=r"总播放次数为(\d+)次"
+        result=re.search(playpattern,soup.select_one("div.anim_online  div.h2_title2  span:nth-of-type(4)").text)
+        if result:
+            item["animeplaytimes"]=result.group(1)
+        else:
+            item["animeplaytimes"] = 0
+        makerpattern=r"制作公司\s+:\s+(.*)"
+        result=re.search(makerpattern,soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(9)").text)
+        if result:
+            item["animemaker"] =result.group(1)
+        else:
+            item["animemaker"] = ""
+        showpattern = r"首播时间\s+:\s+(.*)"
+        result = re.search(showpattern,
+                           soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(4)").text)
+        if result:
+            item["animeshowtime"] = result.group(1)
+        else:
+            item["animeshowtime"] = ""
         item["animetype"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(6) a").text
         item["animerated"]=soup.select_one("#anim_score_info  span.points_text").text
         item["animetotalvideotime"]=soup.select_one("div.odd_anim_title > div.odd_anim_title_tnew > div > span.font12yellow").text
-        item["animeplaytype"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(1)").text
-        item["animeoriginmaker"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(7)").text
-        item["animedirector"]=soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(8)").text
+        playtypepattern=r"动画种类\s+:\s+(.*)"
+        result = re.search(playtypepattern,
+                           soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(1)").text)
+        if result:
+            item["animeplaytype"] = result.group(1)
+        else:
+            item["animeplaytype"] = ""
+        originpattern = r"原作\s+:\s+(.*)"
+        result = re.search(originpattern,
+                           soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(7)").text)
+        if result:
+            item["animeoriginmaker"] = result.group(1)
+        else:
+            item["animeoriginmaker"] = ""
+        directorpattern = r"监督\s+:\s+(.*)"
+        result = re.search(directorpattern,
+                           soup.select_one("div.anim_attributenew  div:nth-of-type(2)  ul  li:nth-of-type(8)").text)
+        if result:
+            item["animedirector"] = result.group(1)
+        else:
+            item["animedirector"] = ""
         print(json.dumps(dict(item),ensure_ascii=False))
         yield item
         pass
@@ -74,4 +111,9 @@ class animespider(CrawlSpider):
         html = driver.page_source
         driver.close()
         return html
-
+    def getvalue(self,pattern,srcdata,index):
+        result=re.search(pattern,srcdata)
+        if result:
+            return result.group(index)
+        else:
+            return "-"
